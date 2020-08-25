@@ -1,0 +1,37 @@
+?r?
+Komenda:     !r     [Riot bot EUNE]
+- !r key - pokazuję ważność obecnego klucza
+- !r <key> - zmienia na nowy klucz
+- !r link - link do API Riotu
+- !match <nick>- wyświetla informacje na temat obecnej gry
+- !summoner <nick>- wyświetla informacje na temat gracza
+- !matches <nick> - wyświetla historię gier
+?f1?
+Komenda:     !f1     [Formula 1]
+- !f1 season <x> - wyświetla wyniki sezonu
+- !f1 tracklist - wyświetla kolejność torów w sezonie
+- !f1 quali <track index> - wyświetla wyniki kwalifikacji na danym torze
+- !f1 race <track index> - wyświetla wyniki wyścigu na danym torze
+?pogoda?
+Komenda:     !pogoda     [Pogoda]
+- !pogoda - wyświetla pogodę w domyślnej lokalizacji
+- !pogoda <miasto> - wyświetla pogodę w konkretnej lokalizacji
+?corona?
+Komenda:     !corona     [Koronawirus]
+- !corona - wyświetla informacje o państwie[z polski] i na świecie
+- !corona [dwu znakowy kod kraju] - wyświetla informacje o państwie i na świecie
+?wykop?
+Komenda:     !wykop     [Wykop]
+- !wykop - wyświetla najbardziej popularne wykopki tygodnia
+?lista?
+Komenda:     !list     [Lista]
+- !list - wyświetla informacje zawarte w liście
+- !list add <xxx> - dodaje warunek do listy
+- !list remove <xxx> - usuwa warunek z listy
+- !list clear - czyści całą listę
+?clear?
+Komenda:     !clear     [Clear]
+- !clear <ilość> - czyści wybraną ilość wiadomości
+?translate?
+Komenda:     !translate     [Translator]
+- !translate <kod języka> <zdanie do przetłumaczenia> - tłumaczy zdanie z Angielskiego na dowolny inny język
