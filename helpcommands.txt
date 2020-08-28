@@ -5,7 +5,7 @@ Komenda:     !r     [Riot bot EUNE]
 - !r link - link do API Riotu
 - !match <nick>- wyświetla informacje na temat obecnej gry
 - !summoner <nick>- wyświetla informacje na temat gracza
-- !matches <nick> - wyświetla historię gier
+- !matches <nick> <count> - wyświetla historię gier
 ?f1?
 Komenda:     !f1     [Formula 1]
 - !f1 season <x> - wyświetla wyniki sezonu
@@ -35,3 +35,6 @@ Komenda:     !clear     [Clear]
 ?translate?
 Komenda:     !translate     [Translator]
 - !translate <kod języka> <zdanie do przetłumaczenia> - tłumaczy zdanie z Angielskiego na dowolny inny język
+?c?
+Komenda:     !build (c)     [Buildy do champów]
+- !build <nazwa champa> - wyświetla link do build'u na danego champa

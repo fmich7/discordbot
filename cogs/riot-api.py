@@ -52,6 +52,7 @@ class Player:
         self.ranked = self.createRankedList()
         self.championId = None
 
+    # zbiera informacje na temat punktów maestri danego gracza
     def createMaestryList(self):
         c_maestry = getData(path_masteriesbysummoner, self.summonerId)[:3]
         l = []
@@ -60,6 +61,7 @@ class Player:
                 f' {champions.get(c_maestry[i]["championId"])} [{c_maestry[i]["championLevel"]}] {"{:,}".format(c_maestry[i]["championPoints"]).replace(",", " ")},')
         return l
 
+    # zbiera informacje na temat rozegranych matchy
     def createMatchList(self, start=0, end=1):
 
         match_list = getData(path_matchesbyaccount, self.accountId)
@@ -73,14 +75,15 @@ class Player:
 
                 nick = nicks[i]
                 minionsKilled = participantInfo['stats']['totalMinionsKilled']
-                damageDealt = participantInfo['stats']['totalDamageDealt']
+                damageDealt = participantInfo['stats']['totalDamageDealtToChampions']
                 winOrNo = participantInfo['stats']['win']
                 stats = f'{participantInfo["stats"]["kills"]}/{participantInfo["stats"]["deaths"]}/{participantInfo["stats"]["assists"]}'
                 championId = participantInfo['championId']
                 # self.rank = None
                 # self.level = None
                 dataBase.append({'nick': nick, 'minionsKilled': minionsKilled,
-                                 'damageDealt': damageDealt, 'stats': stats, 'championId': championId, 'winOrNo': winOrNo})
+                                 'damageDealt': damageDealt, 'stats': stats, 'championId': championId,
+                                 'winOrNo': winOrNo})
             return dataBase
 
         for i in range(start, end):
@@ -112,6 +115,7 @@ class Player:
         return sorted(l, key=str.lower)
 
 
+# zbiera dane z bierzącej gry, dodać exception
 def liveMatch(name):
     c_currentmatch = getData("spectator/v4/active-games/by-summoner", getData(path_summonerbyname, name)['id'])
     currentMatchPlayers = []
@@ -142,7 +146,8 @@ class Riot(commands.Cog):
         elif args[0].lower() == "key":
             # ten if sprawdza czy klucz jest ważny
             if len(args) == 1:
-                deltatime = datetime.datetime.today() - datetime.datetime.strptime(getExpirationDate(), '%Y-%m-%d %H:%M:%S.%f')
+                deltatime = datetime.datetime.today() - datetime.datetime.strptime(getExpirationDate(),
+                                                                                   '%Y-%m-%d %H:%M:%S.%f')
                 if deltatime < datetime.timedelta(hours=24):
                     displayTimeRemaining = str(datetime.timedelta(hours=24) - deltatime).split(".")[0]
                     await ctx.send(f'🆗 Klucz jest nadal aktualny przez ⏳ {displayTimeRemaining} [{getApiKey()}]')
@@ -164,6 +169,7 @@ class Riot(commands.Cog):
         else:
             await ctx.send('❌ Coś poszło nie tak')
 
+    # wywołuje inne funkcje na temat live matcha
     @commands.command()
     async def match(self, ctx, name='kubabmw1'):
 
@@ -186,6 +192,7 @@ class Riot(commands.Cog):
 
             await ctx.send(embed=embed)
 
+    # wypisuje mecze na chacie na podstawie danych z innej funkcji
     async def writeMatchesInChat(self, ctx, data, name):
         print(data)
         for i in range(len(data)):
@@ -206,19 +213,29 @@ class Riot(commands.Cog):
                 url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{champions.get(targetPlayer['championId'])}.png")
             redteamstr = ''
             blueteamstr = ''
-            #first team
+            # first team
             for x in range(5):
                 short = data[i]["users"][x]
-                redteamstr += f'[{champions.get(short["championId"])}] {short["nick"]}\n {short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG\n'
-            #second team
+                # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
+                champAndPlayer = f'[{champions.get(short["championId"])}] {short["nick"]}'
+                if len(champAndPlayer) >= 20:
+                    champAndPlayer = champAndPlayer[0:20] + "..."
+                redteamstr += f'```css\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
+            # second team
             for x in range(5, 10):
                 short = data[i]["users"][x]
-                blueteamstr += f'```ini\n [{champions.get(short["championId"])}] {short["nick"]}```\n {short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG\n'
+                # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
+                champAndPlayer = f'[{champions.get(short["championId"])}] {short["nick"]}'
+                if len(champAndPlayer) >= 20:
+                    champAndPlayer = champAndPlayer[0:20] + "..."
+                blueteamstr += f'```ini\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
             print(2)
             embed.add_field(name="Red team", value=redteamstr, inline=True)
             embed.add_field(name="Blue team", value=blueteamstr, inline=True)
-            await ctx.send(embed=embed)
+            msg = await ctx.send(embed=embed)
+            await msg.add_reaction('😀')
 
+    # wypisuje informacje na temat gracza
     @commands.command()
     async def summoner(self, ctx, *, name='kubabmw1'):
 
@@ -235,11 +252,12 @@ class Riot(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # wyświetla historię gier
     @commands.command()
-    async def matches(self, ctx, *, name='kubabmw1'):
+    async def matches(self, ctx, name='kubabmw1', lastIndex=3, firstIndex=0):
 
         user = Player(name)
-        data = user.createMatchList(0, 3)
+        data = user.createMatchList(firstIndex, lastIndex)
         print(data)
         await self.writeMatchesInChat(ctx, data, name)
 

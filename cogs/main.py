@@ -16,7 +16,7 @@ class Example(commands.Cog):
 
     @commands.command(name='f1')
     async def formula_one(self, ctx, *args):
-        #https://ergast.com/api/f1/2020/1/results
+        # https://ergast.com/api/f1/2020/1/results
         nationalities = {'American': 'us', "Argentine": 'ar', 'Australian': 'au', 'Austrian': 'at', 'Belgian': 'be',
                          'Brazilian': 'br', 'British': 'gb', 'Canadian': 'ca', 'Chilean': 'cl', 'Colombian': 'co',
                          'Czech': 'cz', 'Danish': 'dk', 'Dutch': 'nl', 'Finnish': 'fi', 'French': 'fr', 'German': 'de',
@@ -29,7 +29,7 @@ class Example(commands.Cog):
             embed = discord.Embed(colour=discord.Color.orange())
             data = loadHelpCommands()
             for i in range(len(data)):
-                if(data[i][0]) == '?f1?\n':
+                if (data[i][0]) == '?f1?\n':
                     tempstr = ''.join(data[i][2:])
                     embed.add_field(name=data[i][1], value=tempstr, inline=False)
             await ctx.send(embed=embed)
@@ -69,13 +69,16 @@ class Example(commands.Cog):
                     await ctx.send('❌ Nie można znaleźć tego sezonu')
                     return
 
-            embed = discord.Embed(title=f"Harmonogram wyścigów [{data['MRData']['total']}]", description=f"sezon {data['MRData']['RaceTable']['season']}",
+            embed = discord.Embed(title=f"Harmonogram wyścigów [{data['MRData']['total']}]",
+                                  description=f"sezon {data['MRData']['RaceTable']['season']}",
                                   color=0x13a6a3)
 
             shortcut = data['MRData']['RaceTable']['Races']
 
             for i in range(len(shortcut)):
-                embed.add_field(name=f"#{shortcut[i]['round']} {shortcut[i]['raceName']}", value=f"{shortcut[i]['Circuit']['Location']['country']} [{shortcut[i]['Circuit']['Location']['locality']}] | {shortcut[i]['date']}", inline=False)
+                embed.add_field(name=f"#{shortcut[i]['round']} {shortcut[i]['raceName']}",
+                                value=f"{shortcut[i]['Circuit']['Location']['country']} [{shortcut[i]['Circuit']['Location']['locality']}] | {shortcut[i]['date']}",
+                                inline=False)
 
             embed.set_footer(text=f"@ergast.com/api | {datetime.date.today()}")
 
@@ -90,7 +93,9 @@ class Example(commands.Cog):
                     await ctx.send('❌ Nie można znaleźć tego tych kwalifikacji')
                     return
 
-            embed = discord.Embed(title=f"Wyniki kwalifikacji [{data['MRData']['RaceTable']['season']}]", description=f"#{data['MRData']['RaceTable']['round']} {data['MRData']['RaceTable']['Races'][0]['raceName']} [{data['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]", color=0x13a6a3)
+            embed = discord.Embed(title=f"Wyniki kwalifikacji [{data['MRData']['RaceTable']['season']}]",
+                                  description=f"#{data['MRData']['RaceTable']['round']} {data['MRData']['RaceTable']['Races'][0]['raceName']} [{data['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]",
+                                  color=0x13a6a3)
 
             allDriversStantings = ''
             alldriversTimes = ''
@@ -101,7 +106,8 @@ class Example(commands.Cog):
                 # for loop na 3 bo musi sprawdzic ktory kierowca nie ma q2 q3
                 for x in range(3):
                     try:
-                        temponaryTimesStorage.append(data['MRData']['RaceTable']['Races'][0]['QualifyingResults'][i][f"Q{x+1}"])
+                        temponaryTimesStorage.append(
+                            data['MRData']['RaceTable']['Races'][0]['QualifyingResults'][i][f"Q{x + 1}"])
                     except:
                         break
                 alldriversTimes += f"{' | '.join(temponaryTimesStorage)}\n"
@@ -154,6 +160,10 @@ class Example(commands.Cog):
         translation = translator.translate(' '.join(args[1:]))
         await ctx.send(translation)
 
+    @commands.command(aliases=['c'])
+    async def build(self, ctx, arg: str):
+        await ctx.send(f'https://u.gg/lol/champions/{arg.lower()}/build')
+
     @commands.command(name='wykop')
     async def wykop(self, ctx):
         url = 'https://www.wykop.pl/hity/'
@@ -187,7 +197,8 @@ class Example(commands.Cog):
                 f'🕒 Aktualizowane: {data["Countries"][133]["Date"][:-1].replace("T", " ")}')
             return
         try:
-            country_id = next((i for i, item in enumerate(data['Countries']) if item["CountryCode"] == args[0].upper()), None)
+            country_id = next((i for i, item in enumerate(data['Countries']) if item["CountryCode"] == args[0].upper()),
+                              None)
 
             await ctx.send(
                 f':flag_{args[0].lower()}: W {data["Countries"][country_id]["Country"]}:     ☣ {"{:,}".format(data["Countries"][country_id]["TotalConfirmed"])}     💀 {"{:,}".format(data["Countries"][country_id]["TotalDeaths"])}     '
