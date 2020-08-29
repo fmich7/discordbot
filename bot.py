@@ -83,4 +83,4 @@ async def on_command_error(ctx, error):
 async def ping(ctx):
     await ctx.send(f'⏳ Ping bota: {round(client.latency * 1000)}ms')
 
-client.run(loadConfigFile()['TOKEN'])
+client.run(os.environ.get('TOKEN'))

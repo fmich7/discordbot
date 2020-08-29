@@ -2,12 +2,13 @@ import datetime
 import discord
 import requests
 import json
+import os
 from bot import loadHelpCommands, loadConfigFile
 from translate import Translator
 from discord.ext import commands
 from bs4 import BeautifulSoup
 
-weather_key = loadConfigFile()['WEATHER_KEY']
+weather_key = os.environ.get('weather_key')
 
 
 class Example(commands.Cog):
