@@ -24,14 +24,14 @@ Komenda:     !corona     [Koronawirus]
 Komenda:     !wykop     [Wykop]
 - !wykop - wyświetla najbardziej popularne wykopki tygodnia
 ?lista?
-Komenda:     !list     [Lista]
-- !list - wyświetla informacje zawarte w liście
-- !list add <xxx> - dodaje warunek do listy
-- !list remove <xxx> - usuwa warunek z listy
-- !list clear - czyści całą listę
-?clear?
-Komenda:     !clear     [Clear]
-- !clear <ilość> - czyści wybraną ilość wiadomości
+Komenda:     !lista     [Lista]
+- !lista - wyświetla informacje zawarte w liście
+- !lista add <xxx> - dodaje warunek do listy
+- !lista remove <xxx> - usuwa warunek z listy
+- !lista clear - czyści całą listę
+?removeMessages?
+Komenda:     !removeMessages     [Clear]
+- !removeMessages <ilość> - czyści wybraną ilość wiadomości
 ?translate?
 Komenda:     !translate     [Translator]
 - !translate <kod języka> <zdanie do przetłumaczenia> - tłumaczy zdanie z Angielskiego na dowolny inny język

@@ -3,7 +3,7 @@ import discord
 import requests
 import json
 import os
-from bot import loadHelpCommands, loadConfigFile
+from bot import loadHelpCommands, printHelp
 from translate import Translator
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -17,64 +17,63 @@ class Example(commands.Cog):
 
     @commands.command(name='f1')
     async def formula_one(self, ctx, *args):
-        # https://ergast.com/api/f1/2020/1/results
+
         nationalities = {'American': 'us', "Argentine": 'ar', 'Australian': 'au', 'Austrian': 'at', 'Belgian': 'be',
                          'Brazilian': 'br', 'British': 'gb', 'Canadian': 'ca', 'Chilean': 'cl', 'Colombian': 'co',
                          'Czech': 'cz', 'Danish': 'dk', 'Dutch': 'nl', 'Finnish': 'fi', 'French': 'fr', 'German': 'de',
                          'East German': 'de', 'Hungarian': 'hu', 'Indian': 'in', 'Indonesian': 'in', 'Irish': 'ie',
                          'Italian': 'it', 'Japanese': 'jp', 'Liechtenstein': 'li', 'Malaysian': 'my', 'Mexican': 'mx',
-                         'Monegasque': 'mc', 'Moroccan': 'ma', 'New Zealand': 'nz', 'Ireland‎': 'ie', 'Polish': 'pl',
+                         'Monegasque': 'mc', 'Moroccan': 'ma', 'New Zealand': 'nz', 'New Zealander': 'nz', 'Ireland‎': 'ie', 'Polish': 'pl',
                          'Portuguese': 'pt', 'Rhodesian': 'rh', 'Russian': 'ru', 'South African': 'za', 'Spanish': 'es',
                          'Swedish': 'se', 'Swiss': 'ch', 'Thai': 'th', 'Uruguayan': 'uy', 'Venezuelan': 've'}
         if not args:
-            embed = discord.Embed(colour=discord.Color.orange())
-            data = loadHelpCommands()
-            for i in range(len(data)):
-                if (data[i][0]) == '?f1?\n':
-                    tempstr = ''.join(data[i][2:])
-                    embed.add_field(name=data[i][1], value=tempstr, inline=False)
-            await ctx.send(embed=embed)
-        elif args[0].lower() == 'season':
-            if len(args) < 2:
-                data_formula = getData('https://ergast.com/api/f1/current/driverStandings.json')
+            await printHelp(ctx, '?f1?\n')
+
+        def getFormulaData(link: str, linkWithOption: str, arguments, count: int):
+            if len(arguments) < count:
+                dataFormula = getData(link)
             else:
-                try:
-                    data_formula = getData(f'https://ergast.com/api/f1/{args[1]}/driverStandings.json')
-                except:
-                    await ctx.send('❌ Nie ma danych na temat tego sezonu')
-                    return
+                # robię to z replace, bo coś nie działa z formatowaniem podczas wywoływania funkcji
+                dataFormula = getData(linkWithOption.replace("{ARGS[1]}", args[1]))
+
+            return dataFormula
+
+        if args[0].lower() == 'season':
+            data_formula = getFormulaData('https://ergast.com/api/f1/current/driverStandings.json',
+                                          'https://ergast.com/api/f1/{ARGS[1]}/driverStandings.json', args, 2)
+
+            if type(data_formula) is not dict:
+                await ctx.send('❌ Nie ma danych na temat tego sezonu')
+                return
 
             season_info = getData(f'http://ergast.com/api/f1/{data_formula["MRData"]["StandingsTable"]["season"]}.json')
-
             standings = data_formula['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings']
 
             embed = discord.Embed(title=f"TABELA WYNIKÓW {data_formula['MRData']['StandingsTable']['season']}",
                                   description=f"         Wyścigi {data_formula['MRData']['StandingsTable']['StandingsLists'][0]['round']}/{season_info['MRData']['total']}",
                                   color=0xc01b1b)
 
-            for i in range(len(standings)):
+            for driver in standings:
                 embed.add_field(
-                    name=f'#{i + 1} :flag_{nationalities[standings[i]["Driver"]["nationality"]]}: {standings[i]["Driver"]["givenName"]} {standings[i]["Driver"]["familyName"]} [{standings[i]["Constructors"][0]["name"]}]',
-                    value=f'PTS: {standings[i]["points"]} | Wins: {standings[i]["wins"]}', inline=False)
+                    name=f'#{driver["position"]} :flag_{nationalities[driver["Driver"]["nationality"]]}: {driver["Driver"]["givenName"]} {driver["Driver"]["familyName"]} [{driver["Constructors"][0]["name"]}]',
+                    value=f'PTS: {driver["points"]} | Wins: {driver["wins"]}', inline=False)
 
             embed.set_footer(text=f"@ergast.com/api | {datetime.date.today()}")
 
             await ctx.send(embed=embed)
         elif args[0].lower() == 'tracklist':
-            if len(args) < 2:
-                data = getData(f'https://ergast.com/api/f1/current.json')
-            else:
-                try:
-                    data = getData(f'https://ergast.com/api/f1/{args[1]}.json')
-                except:
-                    await ctx.send('❌ Nie można znaleźć tego sezonu')
-                    return
+            data_formula = getFormulaData('https://ergast.com/api/f1/current.json',
+                                          'https://ergast.com/api/f1/{ARGS[1]}.json', args, 2)
 
-            embed = discord.Embed(title=f"Harmonogram wyścigów [{data['MRData']['total']}]",
-                                  description=f"sezon {data['MRData']['RaceTable']['season']}",
+            if type(data_formula) is not dict:
+                await ctx.send('❌ Nie ma danych na temat tego sezonu')
+                return
+
+            embed = discord.Embed(title=f"Harmonogram wyścigów [{data_formula['MRData']['total']}]",
+                                  description=f"sezon {data_formula['MRData']['RaceTable']['season']}",
                                   color=0x13a6a3)
 
-            shortcut = data['MRData']['RaceTable']['Races']
+            shortcut = data_formula['MRData']['RaceTable']['Races']
 
             for i in range(len(shortcut)):
                 embed.add_field(name=f"#{shortcut[i]['round']} {shortcut[i]['raceName']}",
@@ -85,64 +84,81 @@ class Example(commands.Cog):
 
             await ctx.send(embed=embed)
         elif args[0].lower() == 'quali':
-            if len(args) < 2:
-                data = getData(f'https://ergast.com/api/f1/current/1/qualifying.json')
-            else:
-                try:
-                    data = getData(f'https://ergast.com/api/f1/current/{args[1]}/qualifying.json')
-                except:
-                    await ctx.send('❌ Nie można znaleźć tego tych kwalifikacji')
-                    return
+            data_formula = getFormulaData('https://ergast.com/api/f1/current/qualifying.json?limit=30&offset=120',
+                                          'https://ergast.com/api/f1/current/{ARGS[1]}/qualifying.json', args, 2)
 
-            embed = discord.Embed(title=f"Wyniki kwalifikacji [{data['MRData']['RaceTable']['season']}]",
-                                  description=f"#{data['MRData']['RaceTable']['round']} {data['MRData']['RaceTable']['Races'][0]['raceName']} [{data['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]",
+            if type(data_formula) is not dict:
+                await ctx.send('❌ Nie ma danych na temat tego sezonu')
+                return
+
+            # sprawdza zależnie od warunku args[1] sezon i runde
+            try:
+                wyniki = data_formula['MRData']['RaceTable']['season']
+                descr = data_formula['MRData']['RaceTable']['round']
+            except:
+                wyniki = data_formula['MRData']['RaceTable']['Races'][0]['season']
+                descr = data_formula['MRData']['RaceTable']['Races'][0]['round']
+
+            embed = discord.Embed(title=f"Wyniki kwalifikacji [{wyniki}]",
+                                  description=f"#{descr} "
+                                              f"{data_formula['MRData']['RaceTable']['Races'][0]['raceName']} "
+                                              f"[{data_formula['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]",
                                   color=0x13a6a3)
 
-            allDriversStantings = ''
+            allDriversStandings = ''
             alldriversTimes = ''
-            shortcut = data['MRData']['RaceTable']['Races'][0]['QualifyingResults']
+            shortcut = data_formula['MRData']['RaceTable']['Races'][0]['QualifyingResults']
             for i in range(len(shortcut)):
                 temponaryTimesStorage = []
-                allDriversStantings += f"#{shortcut[i]['position']} :flag_{nationalities[shortcut[i]['Driver']['nationality']]}: {shortcut[i]['Driver']['givenName']} {shortcut[i]['Driver']['familyName']}\n"
+                allDriversStandings += f"#{shortcut[i]['position']} :flag_{nationalities[shortcut[i]['Driver']['nationality']]}: {shortcut[i]['Driver']['givenName']} {shortcut[i]['Driver']['familyName']}\n"
                 # for loop na 3 bo musi sprawdzic ktory kierowca nie ma q2 q3
                 for x in range(3):
                     try:
                         temponaryTimesStorage.append(
-                            data['MRData']['RaceTable']['Races'][0]['QualifyingResults'][i][f"Q{x + 1}"])
+                            data_formula['MRData']['RaceTable']['Races'][0]['QualifyingResults'][i][f"Q{x + 1}"])
                     except:
                         break
                 alldriversTimes += f"{' | '.join(temponaryTimesStorage)}\n"
 
-            embed.add_field(name="Kierowcy", value=allDriversStantings, inline=True)
+            embed.add_field(name="Kierowcy", value=allDriversStandings, inline=True)
             embed.add_field(name="Q1 | Q2 | Q3", value=alldriversTimes, inline=True)
 
             embed.set_footer(text=f"@ergast.com/api | {datetime.date.today()}")
 
             await ctx.send(embed=embed)
         elif args[0].lower() == 'race':
-            if len(args) < 2:
-                data = getData(f'https://ergast.com/api/f1/current/1/results.json')
-            else:
-                try:
-                    data = getData(f'https://ergast.com/api/f1/current/{args[1]}/results.json')
-                except:
-                    await ctx.send('❌ Nie można znaleźć tego wyścigu')
-                    return
+            data_formula = getFormulaData('https://ergast.com/api/f1/current/1/results.json',
+                                          'https://ergast.com/api/f1/current/{ARGS[1]}/results.json', args, 2)
 
-            embed = discord.Embed(title=f"Wyniki wyścigu [{data['MRData']['RaceTable']['season']}]",
-                                  description=f"#{data['MRData']['RaceTable']['round']} {data['MRData']['RaceTable']['Races'][0]['raceName']} [{data['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]",
+            if type(data_formula) is not dict:
+                await ctx.send('❌ Nie ma danych na temat tego sezonu')
+                return
+
+            embed = discord.Embed(title=f"Wyniki wyścigu [{data_formula['MRData']['RaceTable']['season']}]",
+                                  description=f"#{data_formula['MRData']['RaceTable']['round']} {data_formula['MRData']['RaceTable']['Races'][0]['raceName']} [{data_formula['MRData']['RaceTable']['Races'][0]['Circuit']['circuitName']}]",
                                   color=0x13a6a3)
 
             allDriversStantings = ''
             allDriversTimes = ''
             allDriversGap = ''
-            shortcut = data['MRData']['RaceTable']['Races'][0]['Results']
+            shortcut = data_formula['MRData']['RaceTable']['Races'][0]['Results']
             for i in range(len(shortcut)):
+                # refactor this please
+                try:
+                    gap = shortcut[i]['Time']['time']
+                except:
+                    gap = shortcut[i]['status']
+                try:
+                    fastestLap = shortcut[i]['FastestLap']['Time']['time']
+                except:
+                    fastestLap = 'No info'
+
                 allDriversStantings += f"#{shortcut[i]['position']} :flag_{nationalities[shortcut[i]['Driver']['nationality']]}: {shortcut[i]['Driver']['givenName']} {shortcut[i]['Driver']['familyName']}\n"
-                allDriversTimes += f"{shortcut[i]['FastestLap']['Time']['time']}\n"
+                allDriversTimes += f"{fastestLap}\n"
+
                 if i >= 10:
                     continue
-                allDriversGap += f"{shortcut[i]['Time']['time']}\n"
+                allDriversGap += f"{gap}\n"
 
             embed.add_field(name="Klasyfikacja", value=allDriversStantings, inline=True)
             embed.add_field(name="Gap", value=allDriversGap, inline=True)
@@ -214,42 +230,39 @@ class Example(commands.Cog):
         await ctx.send('https://www.watch2gether.com/')
 
     @commands.command()
-    async def list(self, ctx, *args):
-
-        if not args:
-            with open('config.json', 'r') as file:
-                data = json.loads(file.read())
-                o = '📋 Lista: \n'
+    async def lista(self, ctx, *args):
+        response = ''
+        with open('config.json', 'r+') as file:
+            data = json.loads(file.read())
+            if not args:
+                response = '📋 Lista: \n'
                 for x in range(len(data['lista'])):
-                    o += f'[{x + 1}] {data["lista"][x]} \n'
-                await ctx.send(o)
+                    response += f'[{x + 1}] {data["lista"][x]} \n'
+                # Tutaj daje await i return, bo ten if nie potrzebuje json.dump
+                await ctx.send(response)
+                return
 
-        elif args[0].lower() == 'add':
-            with open('config.json', 'r+') as file:
-                data = json.loads(file.read())
+            if args[0].lower() == 'add':
                 data['lista'].append(' '.join(args[1:]))
                 file.seek(0)
-                json.dump(data, file)
-                await ctx.send(f'✍🏻 {" ".join(args[1:])} zostało dodane do listy')
+                response = f'✍🏻 {" ".join(args[1:])} zostało dodane do listy'
 
-        elif args[0].lower() == 'remove':
-            with open('config.json', 'r+') as file:
-                data = json.loads(file.read())
+            elif args[0].lower() == 'remove':
                 condition = data['lista'][int(args[1]) - 1]
                 del data['lista'][int(args[1]) - 1]
                 file.truncate(0)
                 file.seek(0)
-                json.dump(data, file)
-                await ctx.send(f'⚠ {condition} zostało usunięte z listy')
+                response = f'⚠ {condition} zostało usunięte z listy'
 
-        elif args[0].lower() == 'clear':
-            with open('config.json', 'r+') as file:
-                data = json.loads(file.read())
+            elif args[0].lower() == 'clear':
                 data['lista'].clear()
                 file.truncate(0)
                 file.seek(0)
-                json.dump(data, file)
-                await ctx.send(f'📋 Lista została wyczyszczona')
+                response = f'📋 Lista została wyczyszczona'
+
+            json.dump(data, file)
+
+        await ctx.send(response)
 
     @commands.command()
     async def pogoda(self, ctx, *city):
@@ -260,7 +273,7 @@ class Example(commands.Cog):
 
         data = getData(f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_key}&lang=pl')
 
-        if data['cod'] != 200:
+        if data['cod'] > 400:
             await ctx.send('❌ Nie mogę znaleźć takiego miasta')
             return
 
@@ -320,7 +333,10 @@ class Example(commands.Cog):
 
 def getData(url):
     print(url)
-    return requests.get(url).json()
+    try:
+        return requests.get(url).json()
+    except:
+        return None
 
 
 def setup(client):

@@ -2,7 +2,7 @@ import discord
 import json
 import requests
 import datetime
-from bot import loadHelpCommands
+from bot import printHelp
 from discord.ext import commands
 
 champions = {266: "Aatrox", 103: "Ahri", 84: "Akali", 12: "Alistar", 32: "Amumu", 34: "Anivia", 1: "Annie",
@@ -30,41 +30,40 @@ champions = {266: "Aatrox", 103: "Ahri", 84: "Akali", 12: "Alistar", 32: "Amumu"
 
 region = "eun1"
 
-path_summonerbyname = "summoner/v4/summoners/by-name"
-path_matchesbyaccount = "match/v4/matchlists/by-account"
-path_activegamesbysummoner = "spectator/v4/active-games/by-summoner"
-path_masteriesbysummoner = "champion-mastery/v4/champion-masteries/by-summoner"
-path_rankedbysummoner = "league/v4/entries/by-summoner"
-path_matchbyid = 'match/v4/matches'
-
+summonerByNamePath = "summoner/v4/summoners/by-name"
+matchesByAccountPath = "match/v4/matchlists/by-account"
+activeGamesBySummonerPath = "spectator/v4/active-games/by-summoner"
+maestriesBySummonerPath = "champion-mastery/v4/champion-masteries/by-summoner"
+rankedBySummonerPath = "league/v4/entries/by-summoner"
+matchByIdPath = 'match/v4/matches'
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name: str):
 
-        c_dataplayer = getData(path_summonerbyname, name)
+        playerData = getData(summonerByNamePath, name)
 
-        self.summonerId = c_dataplayer['id']
-        self.accountId = c_dataplayer['accountId']
-        self.nick = c_dataplayer['name']
-        self.profileIconId = c_dataplayer['profileIconId']
-        self.level = c_dataplayer['summonerLevel']
+        self.summonerId = playerData['id']
+        self.accountId = playerData['accountId']
+        self.nick = playerData['name']
+        self.profileIconId = playerData['profileIconId']
+        self.level = playerData['summonerLevel']
         self.maestry = self.createMaestryList()
         self.ranked = self.createRankedList()
-        self.championId = None
+        self.currentChampionId = None
 
-    # zbiera informacje na temat punktów maestri danego gracza
+    # Zbiera informacje na temat punktów maestrii danego gracza
     def createMaestryList(self):
-        c_maestry = getData(path_masteriesbysummoner, self.summonerId)[:3]
+        maestries = getData(maestriesBySummonerPath, self.summonerId)[:3]
         l = []
-        for i in range(len(c_maestry)):
+        for maestry in maestries:
             l.append(
-                f' {champions.get(c_maestry[i]["championId"])} [{c_maestry[i]["championLevel"]}] {"{:,}".format(c_maestry[i]["championPoints"]).replace(",", " ")},')
+                f' {champions.get(maestry["championId"])} [{maestry["championLevel"]}] {"{:,}".format(maestry["championPoints"]).replace(",", " ")},')
         return l
 
     # zbiera informacje na temat rozegranych matchy
     def createMatchList(self, start=0, end=1):
 
-        match_list = getData(path_matchesbyaccount, self.accountId)
+        match_list = getData(matchesByAccountPath, self.accountId)
         match_history = list()
 
         def userDataFromMatch(matchData):
@@ -87,7 +86,7 @@ class Player:
             return dataBase
 
         for i in range(start, end):
-            match = getData(path_matchbyid, match_list['matches'][i]['gameId'])
+            match = getData(matchByIdPath, match_list['matches'][i]['gameId'])
             matchData = {'users': userDataFromMatch(match),
                          'matchLength': str(datetime.timedelta(seconds=match['gameDuration']))[2:]}
             match_history.append(matchData)
@@ -95,7 +94,7 @@ class Player:
         return match_history
 
     def createRankedList(self):
-        c_dataranked = getData(path_rankedbysummoner, self.summonerId)
+        c_dataranked = getData(rankedBySummonerPath, self.summonerId)
         l = []
         for i in range(len(c_dataranked)):
             dict = {'RANKED_FLEX_SR': 1, 'RANKED_SOLO_5x5': 0}
@@ -115,9 +114,9 @@ class Player:
         return sorted(l, key=str.lower)
 
 
-# zbiera dane z bierzącej gry, dodać exception
+# zbiera dane z bieżącej gry, dodać exception
 def liveMatch(name):
-    c_currentmatch = getData("spectator/v4/active-games/by-summoner", getData(path_summonerbyname, name)['id'])
+    c_currentmatch = getData(activeGamesBySummonerPath, getData(summonerByNamePath, name)['id'])
     currentMatchPlayers = []
     currentMatchPlayersChampionsId = []
     for i in range(10):
@@ -134,15 +133,10 @@ class Riot(commands.Cog):
     # function updates riot api key
     @commands.command()
     async def r(self, ctx, *args):
+        # subcommands = {"key": handleKey, "link": handleLink}
+        # subcommands[args[0].lower()]()
         if not args:
-            # wyświetla helpa
-            embed = discord.Embed(colour=discord.Color.orange())
-            data = loadHelpCommands()
-            for i in range(len(data)):
-                if (data[i][0]) == '?r?\n':
-                    tempstr = ''.join(data[i][2:])
-                    embed.add_field(name=data[i][1], value=tempstr, inline=False)
-            await ctx.send(embed=embed)
+            await printHelp(ctx, "?r?\n")
         elif args[0].lower() == "key":
             # ten if sprawdza czy klucz jest ważny
             if len(args) == 1:
@@ -175,10 +169,10 @@ class Riot(commands.Cog):
 
         _summoners = liveMatch(name)
 
-        await self.getTeamInfo(ctx, 0x25aaf1, [_summoners['names'][0:5], _summoners['champId'][0:5]])
-        await self.getTeamInfo(ctx, 0xe71212, [_summoners['names'][5:10], _summoners['champId'][5:10]])
+        await self.printTeamInfo(ctx, 0x25aaf1, [_summoners['names'][0:5], _summoners['champId'][0:5]])
+        await self.printTeamInfo(ctx, 0xe71212, [_summoners['names'][5:10], _summoners['champId'][5:10]])
 
-    async def getTeamInfo(self, ctx, color, summoners):
+    async def printTeamInfo(self, ctx, color, summoners):
         for i in range(len(summoners[0])):
             embed = discord.Embed(title=f'{summoners[0][i].nick}',
                                   description=f"```Level: {summoners[0][i].level}```", color=color)
@@ -265,8 +259,7 @@ class Riot(commands.Cog):
 def getData(short, requiredValue):
     url = f"https://{region}.api.riotgames.com/lol/{short}/{requiredValue}?api_key={getApiKey()}"
     print(url)
-    response = requests.get(url).json()
-    return response
+    return requests.get(url).json()
 
 
 def getApiKey():
