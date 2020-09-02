@@ -3,10 +3,11 @@ import discord
 import requests
 import json
 import os
-from bot import loadHelpCommands, printHelp
+from bot import printHelp
 from translate import Translator
 from discord.ext import commands
 from bs4 import BeautifulSoup
+
 
 weather_key = os.environ.get('weather_key')
 
@@ -46,7 +47,8 @@ class Example(commands.Cog):
                 await ctx.send('❌ Nie ma danych na temat tego sezonu')
                 return
 
-            season_info = getData(f'http://ergast.com/api/f1/{data_formula["MRData"]["StandingsTable"]["season"]}.json')
+            season_info = getData(
+                f'http://ergast.com/api/f1/{data_formula["MRData"]["StandingsTable"]["season"]}.json')
             standings = data_formula['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings']
 
             embed = discord.Embed(title=f"TABELA WYNIKÓW {data_formula['MRData']['StandingsTable']['season']}",
@@ -95,7 +97,7 @@ class Example(commands.Cog):
             try:
                 wyniki = data_formula['MRData']['RaceTable']['season']
                 descr = data_formula['MRData']['RaceTable']['round']
-            except:
+            except Exception:
                 wyniki = data_formula['MRData']['RaceTable']['Races'][0]['season']
                 descr = data_formula['MRData']['RaceTable']['Races'][0]['round']
 
@@ -116,7 +118,7 @@ class Example(commands.Cog):
                     try:
                         temponaryTimesStorage.append(
                             data_formula['MRData']['RaceTable']['Races'][0]['QualifyingResults'][i][f"Q{x + 1}"])
-                    except:
+                    except Exception:
                         break
                 alldriversTimes += f"{' | '.join(temponaryTimesStorage)}\n"
 
@@ -146,11 +148,11 @@ class Example(commands.Cog):
                 # refactor this please
                 try:
                     gap = shortcut[i]['Time']['time']
-                except:
+                except Exception:
                     gap = shortcut[i]['status']
                 try:
                     fastestLap = shortcut[i]['FastestLap']['Time']['time']
-                except:
+                except Exception:
                     fastestLap = 'No info'
 
                 allDriversStantings += f"#{shortcut[i]['position']} :flag_{nationalities[shortcut[i]['Driver']['nationality']]}: {shortcut[i]['Driver']['givenName']} {shortcut[i]['Driver']['familyName']}\n"
@@ -196,7 +198,7 @@ class Example(commands.Cog):
             try:
                 embed.set_thumbnail(
                     url=data[i].find(class_='media-content m-reset-float').a.img['src'])
-            except:
+            except Exception:
                 embed.set_thumbnail(
                     url=data[i].find(class_='media-content m-reset-float').a.img['data-original'])
             embed.set_author(name=f"#{i + 1} 🔥 {data[i].find(class_='diggbox').a.span.string}")
@@ -222,7 +224,7 @@ class Example(commands.Cog):
                 f'🏥 {"{:,}".format(data["Countries"][country_id]["TotalRecovered"])}\n'
                 f'🕒 Aktualizowane: {data["Countries"][country_id]["Date"][:-1].replace("T", " ")}')
 
-        except:
+        except Exception:
             await ctx.send('❌ Podany kod kraju nie istnieje')
 
     @commands.command()
@@ -258,7 +260,7 @@ class Example(commands.Cog):
                 data['lista'].clear()
                 file.truncate(0)
                 file.seek(0)
-                response = f'📋 Lista została wyczyszczona'
+                response = '📋 Lista została wyczyszczona'
 
             json.dump(data, file)
 
@@ -267,65 +269,33 @@ class Example(commands.Cog):
     @commands.command()
     async def pogoda(self, ctx, *city):
         if not city:
-            city = 'Milejów-Osada'
+            city = 'Lublin'
         else:
             city = ' '.join(city)
 
-        data = getData(f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_key}&lang=pl')
+        data = getData(
+            f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_key}&lang=pl')
 
         if data['cod'] > 400:
             await ctx.send('❌ Nie mogę znaleźć takiego miasta')
             return
 
-        color = 0xf7f10d
-        img_id = ''
-        first_letter = str(data['weather'][0]['id'])[0]
-
-        if first_letter == '2':
-            img_id = '11d'
-            color = 0x0e1e31
-        elif first_letter == '3':
-            img_id = '09d'
-            color = 0xf4fa6
-        elif first_letter == '5':
-            if data['weather'][0]['id'] == 511:
-                img_id = '13d'
-                color = 0xfffafa
-            elif data['weather'][0]['id'] >= 520:
-                img_id = '09d'
-                color = 0xf4fa6
-            else:
-                img_id = '10d'
-                color = 0xafc3cc
-        elif first_letter == '6':
-            img_id = '13d'
-            color = 0xfffafa
-        elif first_letter == '7':
-            img_id = '50d'
-            color = 0x686868
-        elif first_letter == '8':
-            if data['weather'][0]['id'] == 800:
-                img_id = '01d'
-                color = 0xf7f10d
-            elif data['weather'][0]['id'] == 801:
-                img_id = '02d'
-                color = 0x7a7800
-            elif data['weather'][0]['id'] == 802:
-                img_id = '03d'
-                color = 0x909090
-            else:
-                img_id = '04d'
-                color = 0xcccccc
+        colorDict = {'01d': 0xf7f10d, '02d': 0x7a7800, '03d': 0x909090, '04d': 0xcccccc,'11d': 0x0e1e31, '09d': 0xf4fa6,
+                     '10d': 0xafc3cc, '13d': 0xfffafa, '50d': 0x686868}
+        img_id = data['weather'][0]['icon']
+        color = colorDict[img_id]
 
         embed = discord.Embed(title=f"Pogoda {city}",
                               description="----------------------------------------------------", color=color)
         embed.set_thumbnail(url=f"http://openweathermap.org/img/wn/{img_id}@2x.png")
-        embed.add_field(name=f'Zjawisko pogodowe:', value=data["weather"][0]["description"].capitalize(), inline=True)
-        embed.add_field(name=f'Temperatura:', value=f'{round(data["main"]["temp"] - 273.15)} °C', inline=False)
-        embed.add_field(name=f'Zachmurzenie:', value=f'{data["clouds"]["all"]} %', inline=False)
-        embed.add_field(name=f'Wiatr:', value=f'{data["wind"]["speed"]} m/s', inline=False)
-        embed.add_field(name=f'Wilgotność:', value=f'{data["main"]["humidity"]} %', inline=False)
-        embed.add_field(name=f'Ciśnienie:', value=f'{data["main"]["pressure"]} hPa', inline=False)
+        embed.add_field(name='Zjawisko pogodowe:',
+                        value=data["weather"][0]["description"].capitalize(), inline=True)
+        embed.add_field(name='Temperatura:',
+                        value='{} °C'.format(round(data["main"]["temp"] - 273.15)), inline=False)
+        embed.add_field(name='Zachmurzenie:', value='{} %'.format(data["clouds"]["all"]), inline=False)
+        embed.add_field(name='Wiatr:', value='{} m/s'.format(data["wind"]["speed"]), inline=False)
+        embed.add_field(name='Wilgotność:', value='{} %'.format(data["main"]["humidity"]), inline=False)
+        embed.add_field(name='Ciśnienie:', value='{} hPa'.format(data["main"]["pressure"]), inline=False)
         embed.set_footer(text=f"@OpenWeatherMap | {datetime.date.today()}")
 
         await ctx.send(embed=embed)
@@ -335,7 +305,7 @@ def getData(url):
     print(url)
     try:
         return requests.get(url).json()
-    except:
+    except Exception:
         return None
 
 

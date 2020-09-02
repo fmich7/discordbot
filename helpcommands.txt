@@ -2,6 +2,7 @@
 Komenda:     !r     [Riot bot EUNE]
 - !r key - pokazuję ważność obecnego klucza
 - !r <key> - zmienia na nowy klucz
+- !r update - aktualizuje bazę championów
 - !r link - link do API Riotu
 - !match <nick>- wyświetla informacje na temat obecnej gry
 - !summoner <nick>- wyświetla informacje na temat gracza
@@ -29,6 +30,9 @@ Komenda:     !lista     [Lista]
 - !lista add <xxx> - dodaje warunek do listy
 - !lista remove <xxx> - usuwa warunek z listy
 - !lista clear - czyści całą listę
+?sendMessageToSpecificUser?
+Komenda: !połk [Message]
+- !połk @<user> <[ilość]> <widomość> - wysyła wiadomości do konkretnego użytkownika
 ?removeMessages?
 Komenda:     !removeMessages     [Clear]
 - !removeMessages <ilość> - czyści wybraną ilość wiadomości

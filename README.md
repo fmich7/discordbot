@@ -9,6 +9,7 @@ Discord bot py
 Komenda:     !r     [Riot bot EUNE]
 - !r key - pokazuję ważność obecnego klucza
 - !r <key> - zmienia na nowy klucz
+- !r update - aktualizuje bazę championów
 - !r link - link do API Riotu
 - !match <nick>- wyświetla informacje na temat obecnej gry
 - !summoner <nick>- wyświetla informacje na temat gracza
@@ -37,6 +38,9 @@ Komenda:     !lista     [Lista]
 - !lista remove <xxx> - usuwa warunek z listy
 - !lista clear - czyści całą listę
 
+Komenda: !połk [Message]
+- !połk @<user> <[ilość]> <widomość> - wysyła wiadomości do konkretnego użytkownika
+
 Komenda:     !removeMessages     [Clear]
 - !removeMessages <ilość> - czyści wybraną ilość wiadomości
 
@@ -47,5 +51,5 @@ Komenda:     !build (c)     [Buildy do champów]
 - !build <nazwa champa> - wyświetla link do build'u na danego champa
 
 ## Example
-![jd](https://i.imgur.com/4ZAN4q1.png)
 ![jd](https://i.imgur.com/aITnfrs.png)
+![jd](https://i.imgur.com/4ZAN4q1.png)

@@ -3,30 +3,8 @@ import json
 import requests
 import datetime
 from bot import printHelp
+from championListUpdater import getChampionsDict
 from discord.ext import commands
-
-champions = {266: "Aatrox", 103: "Ahri", 84: "Akali", 12: "Alistar", 32: "Amumu", 34: "Anivia", 1: "Annie",
-             523: "Aphelios", 22: "Ashe", 136: "AurelionSol", 268: "Azir", 432: "Bard", 53: "Blitzcrank", 63: "Brand",
-             201: "Braum", 51: "Caitlyn", 164: "Camille", 69: "Cassiopeia", 31: "Chogath", 42: "Corki", 122: "Darius",
-             131: "Diana", 119: "Draven", 36: "DrMundo", 245: "Ekko", 60: "Elise", 28: "Evelynn", 81: "Ezreal",
-             9: "Fiddlesticks", 114: "Fiora", 105: "Fizz", 3: "Galio", 41: "Gangplank", 86: "Garen", 150: "Gnar",
-             79: "Gragas", 104: "Graves", 120: "Hecarim", 74: "Heimerdinger", 420: "Illaoi", 39: "Irelia", 427: "Ivern",
-             40: "Janna", 59: "JarvanIV", 24: "Jax", 126: "Jayce", 202: "Jhin", 222: "Jinx", 145: "Kaisa",
-             429: "Kalista", 43: "Karma", 30: "Karthus", 38: "Kassadin", 55: "Katarina", 10: "Kayle", 141: "Kayn",
-             85: "Kennen", 121: "Khazix", 203: "Kindred", 240: "Kled", 96: "KogMaw", 7: "Leblanc", 64: "LeeSin",
-             89: "Leona", 127: "Lissandra", 236: "Lucian", 117: "Lulu", 99: "Lux", 54: "Malphite", 90: "Malzahar",
-             57: "Maokai", 11: "MasterYi", 21: "MissFortune", 62: "MonkeyKing", 82: "Mordekaiser", 25: "Morgana",
-             267: "Nami", 75: "Nasus", 111: "Nautilus", 518: "Neeko", 76: "Nidalee", 56: "Nocturne", 20: "Nunu",
-             2: "Olaf", 61: "Orianna", 516: "Ornn", 80: "Pantheon", 78: "Poppy", 555: "Pyke", 246: "Qiyana",
-             133: "Quinn", 497: "Rakan", 33: "Rammus", 421: "RekSai", 58: "Renekton", 107: "Rengar", 92: "Riven",
-             68: "Rumble", 13: "Ryze", 113: "Sejuani", 235: "Senna", 875: "Sett", 35: "Shaco", 98: "Shen",
-             102: "Shyvana", 27: "Singed", 14: "Sion", 15: "Sivir", 72: "Skarner", 37: "Sona", 16: "Soraka",
-             50: "Swain", 517: "Sylas", 134: "Syndra", 223: "TahmKench", 163: "Taliyah", 91: "Talon", 44: "Taric",
-             17: "Teemo", 412: "Thresh", 18: "Tristana", 48: "Trundle", 23: "Tryndamere", 4: "TwistedFate",
-             29: "Twitch", 77: "Udyr", 6: "Urgot", 110: "Varus", 67: "Vayne", 45: "Veigar", 161: "Velkoz", 254: "Vi",
-             112: "Viktor", 8: "Vladimir", 106: "Volibear", 19: "Warwick", 498: "Xayah", 101: "Xerath", 5: "XinZhao",
-             157: "Yasuo", 83: "Yorick", 350: "Yuumi", 154: "Zac", 238: "Zed", 115: "Ziggs", 26: "Zilean", 142: "Zoe",
-             143: "Zyra"}
 
 region = "eun1"
 
@@ -36,6 +14,7 @@ activeGamesBySummonerPath = "spectator/v4/active-games/by-summoner"
 maestriesBySummonerPath = "champion-mastery/v4/champion-masteries/by-summoner"
 rankedBySummonerPath = "league/v4/entries/by-summoner"
 matchByIdPath = 'match/v4/matches'
+
 
 class Player:
     def __init__(self, name: str):
@@ -57,7 +36,7 @@ class Player:
         l = []
         for maestry in maestries:
             l.append(
-                f' {champions.get(maestry["championId"])} [{maestry["championLevel"]}] {"{:,}".format(maestry["championPoints"]).replace(",", " ")},')
+                f' {getChampionList()[str(maestry["championId"])]} [{maestry["championLevel"]}] {"{:,}".format(maestry["championPoints"]).replace(",", " ")},')
         return l
 
     # zbiera informacje na temat rozegranych matchy
@@ -135,6 +114,7 @@ class Riot(commands.Cog):
     async def r(self, ctx, *args):
         # subcommands = {"key": handleKey, "link": handleLink}
         # subcommands[args[0].lower()]()
+
         if not args:
             await printHelp(ctx, "?r?\n")
         elif args[0].lower() == "key":
@@ -158,6 +138,9 @@ class Riot(commands.Cog):
                     json.dump(data, file)
 
                 await ctx.send(f'✍ Zapisywanie nowego klucza: {args[1]}')
+        elif args[0].lower() == "update":
+            getChampionsDict()
+            await ctx.send('📰 Lista championów została zaktualizowana')
         elif args[0].lower() == "link":
             await ctx.send('🔗 Link do api riotu: https://developer.riotgames.com/')
         else:
@@ -177,7 +160,7 @@ class Riot(commands.Cog):
             embed = discord.Embed(title=f'{summoners[0][i].nick}',
                                   description=f"```Level: {summoners[0][i].level}```", color=color)
             embed.set_thumbnail(
-                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{champions.get(summoners[1][i])}.png")
+                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{getChampionList()[str(summoners[1][i])]}.png")
             embed.add_field(name=f"⚔ Ranked solo/duo:", value=f'{summoners[0][i].ranked[0][1:]}',
                             inline=True)
             embed.add_field(name="🛡️ Ranked flex: ", value=f'{summoners[0][i].ranked[1][1:]}', inline=True)
@@ -204,14 +187,14 @@ class Riot(commands.Cog):
                                   description=f"```Staty: {targetPlayer['stats']} | {targetPlayer['minionsKilled']} CS\nMecz: {winOrNo[targetPlayer['winOrNo']][0]}\nDługość: {data[0]['matchLength']}```",
                                   color=winOrNo[targetPlayer['winOrNo']][1])
             embed.set_thumbnail(
-                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{champions.get(targetPlayer['championId'])}.png")
+                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{getChampionList()[str(targetPlayer['championId'])]}.png")
             redteamstr = ''
             blueteamstr = ''
             # first team
             for x in range(5):
                 short = data[i]["users"][x]
                 # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
-                champAndPlayer = f'[{champions.get(short["championId"])}] {short["nick"]}'
+                champAndPlayer = f'[{getChampionList()[str(short["championId"])]}] {short["nick"]}'
                 if len(champAndPlayer) >= 20:
                     champAndPlayer = champAndPlayer[0:20] + "..."
                 redteamstr += f'```css\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
@@ -219,7 +202,7 @@ class Riot(commands.Cog):
             for x in range(5, 10):
                 short = data[i]["users"][x]
                 # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
-                champAndPlayer = f'[{champions.get(short["championId"])}] {short["nick"]}'
+                champAndPlayer = f'[{getChampionList()[str(short["championId"])]}] {short["nick"]}'
                 if len(champAndPlayer) >= 20:
                     champAndPlayer = champAndPlayer[0:20] + "..."
                 blueteamstr += f'```ini\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
@@ -272,6 +255,12 @@ def getExpirationDate():
     with open('config.json', 'r') as file:
         data = json.loads(file.read())
         return data['expiration_date']
+
+
+def getChampionList():
+    with open('champions.json', 'r') as file:
+        data = json.loads(file.read())
+        return data
 
 
 def setup(client):
