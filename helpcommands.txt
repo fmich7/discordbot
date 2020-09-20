@@ -30,6 +30,9 @@ Komenda:     !lista     [Lista]
 - !lista add <xxx> - dodaje warunek do listy
 - !lista remove <xxx> - usuwa warunek z listy
 - !lista clear - czyści całą listę
+?sendMessageToLoLPlayers?
+Komenda: !ligusia [Message]
+- !ligusia <treść> - wysyła wiadomość do wszystkich dostępnych użytkowników z rangą KOZAK DO LIGI
 ?sendMessageToSpecificUser?
 Komenda: !połk [Message]
 - !połk @<user> <[ilość]> <widomość> - wysyła wiadomości do konkretnego użytkownika

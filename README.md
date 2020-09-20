@@ -38,6 +38,9 @@ Komenda:     !lista     [Lista]
 - !lista remove <xxx> - usuwa warunek z listy
 - !lista clear - czyści całą listę
 
+Komenda: !ligusia [Message]
+- !ligusia <treść> - wysyła wiadomość do wszystkich dostępnych użytkowników z rangą KOZAK DO LIGI
+
 Komenda: !połk [Message]
 - !połk @<user> <[ilość]> <widomość> - wysyła wiadomości do konkretnego użytkownika
 

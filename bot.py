@@ -63,6 +63,18 @@ async def sendMessageToSpecificUser(ctx, user: discord.User, *message):
         time.sleep(0.5)
 
 
+@client.command(pass_context=True)
+async def ligusia(ctx, *, message = '[Sad] Wariacie dawaj na serwer bo akurat nam brakuje typka do ligusi flexy/normalki'):
+    role = discord.utils.get(ctx.guild.roles, name='KOZAK DO LIGI')
+    for member in role.members:
+        if str(member.status) == 'online':
+            embed = discord.Embed(description=f"```css\nSerwer SAD```", color=discord.Color.orange())
+            embed.set_thumbnail(url=f"https://i.pinimg.com/originals/82/ee/cf/82eecf7ecd32a7d9076553a9ca5c65dd.png")
+            embed.add_field(name='😎🤙🏿', value=f'**{message}**', inline=True)
+            embed.set_footer(text="Jak coś to jest bot")
+
+            await member.send(embed=embed)
+
 @client.command()
 async def ping(ctx):
     await ctx.send(f'⏳ Ping Bota: {round(client.latency * 1000)}ms')
