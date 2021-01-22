@@ -5,7 +5,7 @@ import os
 import time
 
 def loadConfigFile():
-    with open('config.json', 'r') as file:
+    with open(f'{os.getcwd()}\config.json', 'r') as file:
         return json.load(file)
 
 
