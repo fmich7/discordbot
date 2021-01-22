@@ -5,6 +5,7 @@ import datetime
 from bot import printHelp
 from championListUpdater import getChampionsDict
 from discord.ext import commands
+from bs4 import BeautifulSoup
 
 region = "eun1"
 
@@ -14,7 +15,7 @@ activeGamesBySummonerPath = "spectator/v4/active-games/by-summoner"
 maestriesBySummonerPath = "champion-mastery/v4/champion-masteries/by-summoner"
 rankedBySummonerPath = "league/v4/entries/by-summoner"
 matchByIdPath = 'match/v4/matches'
-
+lol_version = str()
 
 class Player:
     def __init__(self, name: str):
@@ -103,6 +104,34 @@ def liveMatch(name):
         currentMatchPlayersChampionsId.append(c_currentmatch['participants'][i]['championId'])
     return {'names': currentMatchPlayers, 'champId': currentMatchPlayersChampionsId}
 
+def counterPicks(champion: str):
+    champion = champion.capitalize()
+    url = 'https://u.gg/lol/champions/{}/counter'.format(champion)
+    data = requests.get(url)
+    soup = BeautifulSoup(data.content, 'html.parser')
+    results = soup.find_all(class_='counter-list-card best-win-rate')
+
+    embed = discord.Embed(title=f'{champion} counter', description=f"https://u.gg/lol/champions/{champion}/counter")
+    embed.set_thumbnail(url=f"https://ddragon.leagueoflegends.com/cdn/{lol_version}/img/champion/{champion}.png")
+    str_champions = str()
+    str_winrate = str()
+    str_build = str()
+
+    for i in results:
+        championName = i.find(class_='champion-name').string
+        championWinrate = i.find(class_="win-rate").string.split(" ")[0]
+        championGames = i.find(class_='total-games').get_text()
+
+        championBuild = i['href']
+        str_champions += f'{championName}\n'
+        str_winrate += f'{championWinrate} [{championGames}]\n'
+        str_build += f'[U.GG BUILD](https://u.gg{championBuild}?opp={champion})\n'
+
+    embed.add_field(name=f"Champion", value=str_champions, inline=True)
+    embed.add_field(name=f"Winrate", value=str_winrate, inline=True)
+    embed.add_field(name=f"Build", value=str_build, inline=True)
+    embed.set_footer(text="Data from u.gg")
+    return embed
 
 class Riot(commands.Cog):
 
@@ -139,8 +168,8 @@ class Riot(commands.Cog):
 
                 await ctx.send(f'✍ Zapisywanie nowego klucza: {args[1]}')
         elif args[0].lower() == "update":
-            getChampionsDict()
-            await ctx.send('📰 Lista championów została zaktualizowana')
+            version = getChampionsDict()
+            await ctx.send('📰 Lista championów została zaktualizowana [{}]'.format(version))
         elif args[0].lower() == "link":
             await ctx.send('🔗 Link do api riotu: https://developer.riotgames.com/')
         else:
@@ -160,7 +189,7 @@ class Riot(commands.Cog):
             embed = discord.Embed(title=f'{summoners[0][i].nick}',
                                   description=f"```Level: {summoners[0][i].level}```", color=color)
             embed.set_thumbnail(
-                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{getChampionList()[str(summoners[1][i])]}.png")
+                url=f"https://ddragon.leagueoflegends.com/cdn/{lol_version}/img/champion/{getChampionList()[str(summoners[1][i])]}.png")
             embed.add_field(name=f"⚔ Ranked solo/duo:", value=f'{summoners[0][i].ranked[0][1:]}',
                             inline=True)
             embed.add_field(name="🛡️ Ranked flex: ", value=f'{summoners[0][i].ranked[1][1:]}', inline=True)
@@ -171,7 +200,6 @@ class Riot(commands.Cog):
 
     # wypisuje mecze na chacie na podstawie danych z innej funkcji
     async def writeMatchesInChat(self, ctx, data, name):
-        print(data)
         for i in range(len(data)):
 
             targetPlayerIndex = 0
@@ -187,14 +215,14 @@ class Riot(commands.Cog):
                                   description=f"```Staty: {targetPlayer['stats']} | {targetPlayer['minionsKilled']} CS\nMecz: {winOrNo[targetPlayer['winOrNo']][0]}\nDługość: {data[0]['matchLength']}```",
                                   color=winOrNo[targetPlayer['winOrNo']][1])
             embed.set_thumbnail(
-                url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/champion/{getChampionList()[str(targetPlayer['championId'])]}.png")
-            redteamstr = ''
-            blueteamstr = ''
+                url=f"https://ddragon.leagueoflegends.com/cdn/{lol_version}/img/champion/{getChampionList()[str(targetPlayer['championId'])]}.png")
+            redteamstr = str ()
+            blueteamstr = str()
             # first team
             for x in range(5):
                 short = data[i]["users"][x]
                 # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
-                champAndPlayer = f'[{getChampionList()[str(short["championId"])]}] {short["nick"]}'
+                champAndPlayer = f'[{getChampionList().get(str(short["championId"]), "Unkwn")}] {short["nick"]}'
                 if len(champAndPlayer) >= 20:
                     champAndPlayer = champAndPlayer[0:20] + "..."
                 redteamstr += f'```css\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
@@ -202,11 +230,10 @@ class Riot(commands.Cog):
             for x in range(5, 10):
                 short = data[i]["users"][x]
                 # sprawdza czy champ i nick nie ma wiecej niz 20 charów, jak tak to zmienia na skróconą wersję
-                champAndPlayer = f'[{getChampionList()[str(short["championId"])]}] {short["nick"]}'
+                champAndPlayer = f'[{getChampionList().get(str(short["championId"]), "Unkwn")}] {short["nick"]}'
                 if len(champAndPlayer) >= 20:
                     champAndPlayer = champAndPlayer[0:20] + "..."
                 blueteamstr += f'```ini\n{champAndPlayer}``````{short["stats"]} {short["minionsKilled"]} CS {short["damageDealt"]} DMG```'
-            print(2)
             embed.add_field(name="Red team", value=redteamstr, inline=True)
             embed.add_field(name="Blue team", value=blueteamstr, inline=True)
             msg = await ctx.send(embed=embed)
@@ -215,12 +242,11 @@ class Riot(commands.Cog):
     # wypisuje informacje na temat gracza
     @commands.command()
     async def summoner(self, ctx, *, name='kubabmw1'):
-
         user = Player(name)
 
         embed = discord.Embed(title=f'{user.nick}', description=f"```Level: {user.level}```")
-        embed.set_thumbnail(
-            url=f"https://ddragon.leagueoflegends.com/cdn/10.14.1/img/profileicon/{user.profileIconId}.png")
+        embed.set_thumbnail(url=f"https://ddragon.leagueoflegends.com/cdn/{lol_version}/img/profileicon/{user.profileIconId}.png")
+
         embed.add_field(name=f"⚔ Ranked solo/duo:", value=f'{user.ranked[0][1:]}',
                         inline=True)
         embed.add_field(name="🛡️ Ranked flex: ", value=f'{user.ranked[1][1:]}', inline=True)
@@ -235,9 +261,12 @@ class Riot(commands.Cog):
 
         user = Player(name)
         data = user.createMatchList(firstIndex, lastIndex)
-        print(data)
         await self.writeMatchesInChat(ctx, data, name)
 
+    @commands.command()
+    async def counter(self, ctx, champion='annie'):
+        embed = counterPicks(champion)
+        await ctx.send(embed=embed)
 
 def getData(short, requiredValue):
     url = f"https://{region}.api.riotgames.com/lol/{short}/{requiredValue}?api_key={getApiKey()}"
@@ -250,6 +279,11 @@ def getApiKey():
         data = json.loads(file.read())
         return data['riot-key']
 
+def getLolVersion():
+    with open('config.json', 'r') as file:
+        data = json.loads(file.read())
+        global lol_version
+        lol_version = data['lol-version']
 
 def getExpirationDate():
     with open('config.json', 'r') as file:
@@ -265,3 +299,4 @@ def getChampionList():
 
 def setup(client):
     client.add_cog(Riot(client))
+    getLolVersion()

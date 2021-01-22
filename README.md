@@ -1,8 +1,5 @@
 # Dyssunio
 
-Discord bot py
-
-
 ## Komendy
 
 
@@ -52,6 +49,9 @@ Komenda:     !translate     [Translator]
 
 Komenda:     !build (c)     [Buildy do champów]
 - !build <nazwa champa> - wyświetla link do build'u na danego champa
+
+Komenda:     !counter     [Kontry do champów]
+- !counter <nazwa champa> - wyświetla champy, które kontrują wyszikowanego herosa
 
 ## Example
 ![jd](https://i.imgur.com/aITnfrs.png)
